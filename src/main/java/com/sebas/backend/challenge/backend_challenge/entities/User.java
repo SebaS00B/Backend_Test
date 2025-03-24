@@ -1,5 +1,6 @@
 package com.sebas.backend.challenge.backend_challenge.entities;
 
+import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,7 +44,9 @@ public class User {
                joinColumns = @JoinColumn(name = "user_id"),
                inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> role;
-
+    
+    @Column(name = "last_logout_time")
+    private Date lastLogoutTime;
 
     @OneToMany(mappedBy = "user")
     @JsonIgnore 
@@ -95,6 +98,18 @@ public class User {
     }
     public void setAdmin(boolean admin) {
         this.admin = admin;
+    }
+    public Date getLastLogoutTime() {
+        return lastLogoutTime;
+    }
+    public void setLastLogoutTime(Date lastLogoutTime) {
+        this.lastLogoutTime = lastLogoutTime;
+    }
+    public List<Post> getPosts() {
+        return posts;
+    }
+    public void setPosts(List<Post> posts) {
+        this.posts = posts;
     }
  
 

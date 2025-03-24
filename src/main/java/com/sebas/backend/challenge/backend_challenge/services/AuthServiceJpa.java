@@ -1,5 +1,6 @@
 package com.sebas.backend.challenge.backend_challenge.services;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +14,9 @@ import com.sebas.backend.challenge.backend_challenge.dto.UserDto;
 import com.sebas.backend.challenge.backend_challenge.entities.User;
 import com.sebas.backend.challenge.backend_challenge.repositories.UserRepository;
 import com.sebas.backend.challenge.backend_challenge.util.JwtUtil;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 
 @Service
 public class AuthServiceJpa implements AuthService {
@@ -44,9 +48,17 @@ public class AuthServiceJpa implements AuthService {
     @Override
     public Map<String, String> refreshToken(String refreshToken) {
         if (jwtUtil.validateToken(refreshToken)) {
-            String username = jwtUtil.getUsernameFromJWT(refreshToken);
+            Claims claims = jwtUtil.extractAllClaims(refreshToken);
+            String username = claims.getSubject();
+            Date refreshTokenIssuedAt = claims.getIssuedAt();
+
             User user = userRepository.findByEmail(username)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+            // Verificar si el token fue emitido antes del último logout
+            if (user.getLastLogoutTime() != null && refreshTokenIssuedAt.before(user.getLastLogoutTime())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token inválido");
+            }
 
             Map<String, String> tokens = new HashMap<>();
             tokens.put("access_token", jwtUtil.generateAccessToken(user)); 
@@ -54,6 +66,27 @@ public class AuthServiceJpa implements AuthService {
             return tokens;
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token inválido");
+    }
+
+    @Override
+    public Map<String, String> logout(String token) {
+        String username;
+        try {
+            Claims claims = jwtUtil.extractAllClaims(token);
+            username = claims.getSubject();
+        } catch (JwtException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido");
+        }
+
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        user.setLastLogoutTime(new Date());
+        userRepository.save(user);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Logout exitoso");
+        return response;
     }
 
     public UserDto convertToDTO(User user) {

@@ -52,6 +52,15 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret.strip()));
     }
 
+    // Método para extraer todos los claims del token
+    public Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
     public String generateAccessToken(User user) {
         List<String> roles = user.getRole().stream()
                 .map(Role::getName)
@@ -60,6 +69,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("roles", roles)
+                .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(signingKey, SignatureAlgorithm.HS512)
                 .compact();
@@ -73,18 +83,14 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("roles", roles)
+                .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .signWith(signingKey, SignatureAlgorithm.HS512)
                 .compact();
     }
 
     public String getUsernameFromJWT(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return extractAllClaims(token).getSubject();
     }
 
     public String getJwtFromRequest(HttpServletRequest request) {
@@ -93,29 +99,26 @@ public class JwtUtil {
             token = request.getParameter("Authorization");
         }
         if (StringUtils.hasText(token)) {
-            // Elimina "Bearer " sin importar mayúsculas/minúsculas y espacios adicionales
-            token = token.replaceAll("(?i)bearer\\s*", "").trim(); // <-- Nueva línea corregida
+            token = token.replaceAll("(?i)bearer\\s*", "").trim();
             logger.info("Token extraído: '{}'", token);
             return token;
         }
         return null;
     }
-    
-    
 
+    // Validación básica del token (firma y expiración)
     public boolean validateToken(String token) {
         try {
-            // Asegurarse de limpiar el token
-            token = token.trim();
             Jwts.parserBuilder()
                 .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token);
             return true;
-        } catch (JwtException ex) {
-            logger.error("Error de validación del token: {}", ex.getMessage());
+        } catch (ExpiredJwtException ex) {
+            logger.error("Token expirado: {}", ex.getMessage());
+        } catch (JwtException | IllegalArgumentException ex) {
+            logger.error("Token inválido: {}", ex.getMessage());
         }
         return false;
     }
-    
 }

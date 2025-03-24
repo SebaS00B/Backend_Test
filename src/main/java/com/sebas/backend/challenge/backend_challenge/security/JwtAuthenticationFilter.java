@@ -43,6 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || antPathMatcher.match("/api/users/register", path)
                 || antPathMatcher.match("/api/posts/findall", path)
                 || antPathMatcher.match("/api/users/refresh", path) 
+                || antPathMatcher.match("/api/users/logout", path) 
                 || antPathMatcher.match("/error", path); 
         logger.info("Ruta {} excluida del filtro: {}", path, shouldNot);
         return shouldNot;

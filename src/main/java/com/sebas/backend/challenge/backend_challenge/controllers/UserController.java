@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -55,7 +56,12 @@ public class UserController {
         Map<String, String> tokens = authService.login(loginRequest.getEmail(), loginRequest.getPassword());
         return ResponseEntity.ok(tokens);
     }
-    
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); 
+        return ResponseEntity.ok(authService.logout(token));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, String>> refresh(@Validated @RequestBody RefreshTokenRequestDto refreshRequest) {
         Map<String, String> tokens = authService.refreshToken(refreshRequest.getRefreshToken()); // <-- Usa getRefreshToken()
@@ -75,4 +81,5 @@ public class UserController {
        return deletedUser.map(ResponseEntity::ok)
                          .orElse(ResponseEntity.notFound().build());
     }
+
 }

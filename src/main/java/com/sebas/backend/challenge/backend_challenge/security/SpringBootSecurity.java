@@ -34,7 +34,7 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authz -> authz
             // Endpoints públicos
-            .requestMatchers("/api/users/register", "/api/users/login", "/api/posts/findall",
+            .requestMatchers("/api/users/register", "/api/users/login","/api/users/logout", "/api/posts/findall",
             "/api/users/refresh", "/error").permitAll()
             // Endpoints de usuarios que solo pueden ser gestionados por ADMIN
             .requestMatchers("/api/users/update/**",
