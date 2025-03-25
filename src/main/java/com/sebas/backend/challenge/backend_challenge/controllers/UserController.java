@@ -52,10 +52,11 @@ public class UserController {
     }
     
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Validated @RequestBody LoginRequestDto loginRequest) {
-        Map<String, String> tokens = authService.login(loginRequest.getEmail(), loginRequest.getPassword());
-        return ResponseEntity.ok(tokens);
+    public ResponseEntity<Map<String, Object>> login(@Validated @RequestBody LoginRequestDto loginRequest) {
+        Map<String, Object> response = authService.login(loginRequest.getEmail(), loginRequest.getPassword());
+        return ResponseEntity.ok(response);
     }
+
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7); 

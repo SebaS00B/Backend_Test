@@ -31,18 +31,20 @@ public class AuthServiceJpa implements AuthService {
     private JwtUtil jwtUtil;
 
     @Override
-    public Map<String, String> login(String email, String password) {
+    public Map<String, Object> login(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
-
+    
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña inválida");
         }
-
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("access_token", jwtUtil.generateAccessToken(user)); 
-        tokens.put("refresh_token", jwtUtil.generateRefreshToken(user)); 
-        return tokens;
+    
+        Map<String, Object> response = new HashMap<>();
+        response.put("access_token", jwtUtil.generateAccessToken(user));
+        response.put("refresh_token", jwtUtil.generateRefreshToken(user));
+        response.put("role", user.getRole()); // Suponiendo que el usuario tiene un atributo `role`
+        
+        return response;
     }
 
     @Override
